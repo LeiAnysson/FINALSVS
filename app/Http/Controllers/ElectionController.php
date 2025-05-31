@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Election;
 use App\Models\Candidate;
 use App\Models\AuditLog;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -28,16 +29,15 @@ class ElectionController extends Controller
     }
 
     public function store(Request $request)
-    {
-        Log::info('Store Election Request:', $request->all()); //remove
+    {   
+        Log::info('Creating election with data:', $request->all());
         $user = Auth::user();
-        if (!$user) {
-            return response()->json(['message' => 'Unauthorized. User not authenticated.'], 401);
+        if (! $user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
         }
-
         $org = $user->organizations()->first();
-        if (!$org) {
-            return response()->json(['message' => 'Organization not found for user.'], 404);
+        if (! $org) {
+            return response()->json(['message' => 'Organization not found'], 404);
         }
 
         $validated = $request->validate([
@@ -45,23 +45,60 @@ class ElectionController extends Controller
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'status' => 'required|string',
-            'candidates' => 'array',
-            'candidates.*.user_id' => 'required|exists:users,id',
-            'candidates.*.position_id' => 'required|exists:positions,id',
+            'candidates' => 'required|array',
+            'candidates.*.name' => 'required|string',
+            'candidates.*.position_id' => 'required|exists:positions,position_id',
+            'candidates.*.description' => 'nullable|string' 
         ]);
 
-        $validated['created_by'] = $user->user_id;
-        $validated['org_id'] = $org->org_id;
+        DB::beginTransaction();
 
-        $election = Election::create($validated);
-        
-        if (!empty($validated['candidates'])) {
-            $election->candidates()->createMany($validated['candidates']);
-}
+        try {
+            $election = Election::create([
+                'title' => $validated['title'],
+                'start_date' => $validated['start_date'],
+                'end_date' => $validated['end_date'],
+                'status' => $validated['status'],
+                'created_by' => $user->user_id,
+                'org_id' => $org->org_id,
+            ]);
 
-        $this->logAudit($user->id, 'created', 'Election', $election->election_id, $election->toArray());
+            if ($request->has('candidates')) {
+                $candidates = $request->input('candidates');
+                $files = $request->file('candidates');
 
-        return response()->json($election, 201);
+                foreach ($candidates as $index => $candidateData) {
+                    $candidateUser = User::where('name', $candidateData['name'])->first();
+
+                    if (!$candidateUser) {
+                        DB::rollback();
+                        return response()->json(['error' => "User with name {$candidateData['name']} not found"], 400);
+                    }
+
+                    $photo = null;
+                    if ($files && isset($files[$index]['photo'])) {
+                        $photoFile = $files[$index]['photo'];
+                        $photoPath = $photoFile->store('candidate_photos', 'public');
+                        $photo = $photoPath;
+                    }
+
+                    Candidate::create([
+                        'name' => $candidateData['name'],       // keep the name from input
+                        'position_id' => $candidateData['position_id'],
+                        'election_id' => $election->election_id, // use election_id if that is your PK
+                        'description' => $photo,                 // store photo path here if any
+                        'user_id' => $candidateUser->user_id,   // assign found user's id
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            return response()->json(['message' => 'Election created', 'election' => $election], 201);
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     public function show($id)

@@ -51,6 +51,9 @@ Route::prefix('admin')->group(function () {
     Route::delete('/candidates/{id}', [CandidateController::class, 'destroy']);
 });
 Route::get('/admin/elections/{id}/candidates', [CandidateController::class, 'getCandidatesByElection']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/upload-image', [CandidateController::class, 'uploadImage']);
+});
 
 //Election page
 Route::middleware('auth:sanctum')->prefix('admin')->group(function () {

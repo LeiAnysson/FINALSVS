@@ -22,14 +22,24 @@ class CandidateController extends Controller
             'user_id' => 'required|exists:users,user_id',
             'election_id' => 'required|exists:elections,election_id',
             'position_id' => 'required|exists:positions,position_id',
-            'description' => 'nullable|string',
+            'photo' => 'nullable|image|max:2048', 
         ]);
 
-        $candidate = Candidate::create($validated);
-        
+        $photoPath = null;
+        if ($request->hasFile('photo')) {
+            $photoPath = $request->file('photo')->store('candidate_photos', 'public');
+        }
+
+        $candidate = Candidate::create([
+            'user_id' => $validated['user_id'],
+            'election_id' => $validated['election_id'],
+            'position_id' => $validated['position_id'],
+            'description' => $photoPath,
+        ]);
+
         $userId = Auth::id() ?? 1;
         $this->logAudit($userId, 'created', 'Candidate', $candidate->candidate_id, $candidate->toArray());
-        
+
         return response()->json($candidate, 201);
     }
 
@@ -42,16 +52,25 @@ class CandidateController extends Controller
     public function update(Request $request, $id)
     {
         $candidate = Candidate::findOrFail($id);
-        $oldData = $candidate->toArray(); 
+        $oldData = $candidate->toArray();
 
         $validated = $request->validate([
             'user_id'     => 'required|exists:users,user_id',
             'election_id' => 'required|exists:elections,election_id',
             'position_id' => 'required|exists:positions,position_id',
-            'description' => 'nullable|string',
+            'photo'       => 'nullable|image|max:2048', 
         ]);
 
-        $candidate->update($validated);
+        if ($request->hasFile('photo')) {
+            $photoPath = $request->file('photo')->store('candidate_photos', 'public');
+            $candidate->description = $photoPath; 
+        }
+
+        $candidate->update([
+            'user_id'     => $validated['user_id'],
+            'election_id' => $validated['election_id'],
+            'position_id' => $validated['position_id'],
+        ]);
 
         $userId = Auth::id() ?? 1;
         $this->logAudit($userId, 'updated', 'Candidate', $candidate->candidate_id, [
@@ -95,5 +114,11 @@ class CandidateController extends Controller
                         ->get();
 
         return response()->json($candidates);
+    }
+    public function uploadImage(Request $request)
+    {
+        // store under storage/app/public/images
+        $path = $request->file('image')->store('images', 'public');
+        return response()->json(['path' => $path]);
     }
 }
