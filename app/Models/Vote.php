@@ -17,4 +17,14 @@ class Vote extends Model
         'election_id',
         'voted_at',
     ];
+    public $timestamps = true;
+    public function candidate()
+    {
+        return $this->belongsTo(Candidate::class, 'candidate_id', 'candidate_id');
+    }
+
+    public function voter()
+    {
+        return $this->belongsTo(User::class, 'voter_id', 'user_id');
+    }
 }

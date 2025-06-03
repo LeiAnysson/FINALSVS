@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\User;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
@@ -60,5 +62,20 @@ class UserController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+    public function searchByName(Request $request)
+    {
+        $name = $request->query('name'); // 🔑 This is important for GET requests
+
+        Log::info("Searching user for name: " . $name);
+
+        $user = User::where('name', $name)->first();
+
+        Log::info("Resolved user ID: " . ($user ? $user->user_id : 'NOT FOUND'));
+
+        return response()->json([
+            'user_id' => $user ? $user->user_id : null,
+            'name' => $name
+        ]);
     }
 }

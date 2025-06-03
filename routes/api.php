@@ -9,6 +9,13 @@ use App\Http\Controllers\ElectionController;
 use App\Http\Controllers\CandidateController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\PositionController;
+use App\Http\Controllers\UserController;
+//MOBILE
+use App\Http\Controllers\Mobile\AuthController as MobileAuthController;
+use App\Http\Controllers\Mobile\ElectionController as MobileElectionController;
+use App\Http\Controllers\Mobile\VoteController as MobileVoteController;
+
+//------------------WEB--------------------------
 
 //front end connection
 Route::get('/test', function (Request $request) {
@@ -21,8 +28,20 @@ Route::get('/user', function (Request $request) {
 
 //student login
 Route::post('/login', [AuthController::class, 'login']);
+Route::prefix('mobile')->group(function () {
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/login', [AuthController::class, 'login']);
+
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/user', [UserController::class, 'profile']);
+    });
+});
+
 //teacher login
 Route::post('/admin/login', [AuthController::class, 'adminLogin']);
+Route::get('/login', function () {
+    return response()->json(['message' => 'Login route placeholder']);
+})->name('login');
 
 Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
 
@@ -54,9 +73,36 @@ Route::get('/admin/elections/{id}/candidates', [CandidateController::class, 'get
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/upload-image', [CandidateController::class, 'uploadImage']);
 });
+Route::get('/users/search', [UserController::class, 'searchByName']);
+Route::get('/admin/elections/{election_id}/candidates', [ElectionController::class, 'getCandidates']);
 
 //Election page
 Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
     Route::apiResource('elections', ElectionController::class);
     Route::apiResource('candidates', CandidateController::class);
+});
+
+//------------------MOBILE--------------------------
+Route::prefix('mobile')->group(function () {
+    Route::post('/login', [MobileAuthController::class, 'login']);
+
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/logout', [MobileAuthController::class, 'logout']);
+        Route::get('/elections', [MobileElectionController::class, 'index']);
+        Route::get('/elections/{id}', [MobileElectionController::class, 'show']);
+        Route::get('/elections/{id}/candidates', [MobileElectionController::class, 'candidates']);
+        Route::post('/votes/submit', [MobileVoteController::class, 'submitVote']);
+        Route::get('/user', [UserController::class, 'profile']);
+        Route::get('/elections/{election_id}/status', [MobileElectionController::class, 'getVotingStatus']);
+        Route::get('/elections/{election_id}/org/{org_id}/positions', [MobileElectionController::class, 'getPositionsWithCandidates']);
+        Route::post('/verify-password', [MobileVoteController::class, 'verifyPassword']);
+    });
+
+    Route::get('/test', function () {
+        return response()->json(['message' => 'Mobile API test']);
+    });
+    
+});
+Route::middleware('auth:sanctum')->get('/mobile/check', function (Request $request) {
+    return response()->json(['user' => $request->user()]);
 });

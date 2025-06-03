@@ -30,11 +30,13 @@ class ElectionController extends Controller
 
     public function store(Request $request)
     {   
-        Log::info('Creating election with data:', $request->all());
+        Log::info('Creating election with data:', $request->files->all());
+        
         $user = Auth::user();
         if (! $user) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
+        
         $org = $user->organizations()->first();
         if (! $org) {
             return response()->json(['message' => 'Organization not found'], 404);
@@ -46,7 +48,7 @@ class ElectionController extends Controller
             'end_date' => 'required|date|after_or_equal:start_date',
             'status' => 'required|string',
             'candidates' => 'required|array',
-            'candidates.*.name' => 'required|string',
+            'candidates.*.user_id' => 'required|integer|exists:users,user_id',
             'candidates.*.position_id' => 'required|exists:positions,position_id',
             'candidates.*.description' => 'nullable|string' 
         ]);
@@ -63,33 +65,16 @@ class ElectionController extends Controller
                 'org_id' => $org->org_id,
             ]);
 
-            if ($request->has('candidates')) {
-                $candidates = $request->input('candidates');
-                $files = $request->file('candidates');
+            Log::info('Candidates to insert:', $validated['candidates']);
 
-                foreach ($candidates as $index => $candidateData) {
-                    $candidateUser = User::where('name', $candidateData['name'])->first();
-
-                    if (!$candidateUser) {
-                        DB::rollback();
-                        return response()->json(['error' => "User with name {$candidateData['name']} not found"], 400);
-                    }
-
-                    $photo = null;
-                    if ($files && isset($files[$index]['photo'])) {
-                        $photoFile = $files[$index]['photo'];
-                        $photoPath = $photoFile->store('candidate_photos', 'public');
-                        $photo = $photoPath;
-                    }
-
-                    Candidate::create([
-                        'name' => $candidateData['name'],       // keep the name from input
-                        'position_id' => $candidateData['position_id'],
-                        'election_id' => $election->election_id, // use election_id if that is your PK
-                        'description' => $photo,                 // store photo path here if any
-                        'user_id' => $candidateUser->user_id,   // assign found user's id
-                    ]);
-                }
+            foreach ($validated['candidates'] as $candidateData) {
+                $candidate = Candidate::create([
+                    'user_id' => $candidateData['user_id'],
+                    'position_id' => $candidateData['position_id'],
+                    'description' => $candidateData['description'] ?? null,
+                    'election_id' => $election->election_id,
+                ]);
+                Log::info("Candidate created: user_id {$candidateData['user_id']} for election {$election->election_id}");
             }
 
             DB::commit();
@@ -97,6 +82,7 @@ class ElectionController extends Controller
             return response()->json(['message' => 'Election created', 'election' => $election], 201);
         } catch (\Exception $e) {
             DB::rollback();
+            Log::error('Error creating election:', ['exception' => $e]);
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
@@ -153,6 +139,19 @@ class ElectionController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Audit log error: ' . $e->getMessage());
+        }
+    }
+
+    public function getCandidates($election_id)
+    {
+        try {
+            $candidates = Candidate::with(['user', 'position'])
+                ->where('election_id', $election_id)
+                ->get();
+
+            return response()->json($candidates);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 }

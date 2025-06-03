@@ -13,7 +13,19 @@ class CandidateController extends Controller
 {
     public function index()
     {
-        return Candidate::with(['user', 'election', 'position'])->get();
+        $candidates = Candidate::with(['user', 'election', 'position'])->get();
+
+        $formatted = $candidates->map(function ($candidate) {
+            return [
+                'candidate_id' => $candidate->candidate_id,
+                'user_name' => $candidate->user->name ?? 'N/A',
+                'description' => $candidate->description,
+                'election_name' => $candidate->election->name ?? 'N/A',
+                'position_name' => $candidate->position->position_name ?? 'N/A',
+            ];
+        });
+
+        return response()->json($formatted);
     }
 
     public function store(Request $request)
@@ -27,7 +39,7 @@ class CandidateController extends Controller
 
         $photoPath = null;
         if ($request->hasFile('photo')) {
-            $photoPath = $request->file('photo')->store('candidate_photos', 'public');
+            $photoPath = $request->file('photo')->store('image', 'public');
         }
 
         $candidate = Candidate::create([
@@ -117,7 +129,6 @@ class CandidateController extends Controller
     }
     public function uploadImage(Request $request)
     {
-        // store under storage/app/public/images
         $path = $request->file('image')->store('images', 'public');
         return response()->json(['path' => $path]);
     }
