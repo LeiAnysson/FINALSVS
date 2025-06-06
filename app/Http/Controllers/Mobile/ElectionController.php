@@ -73,12 +73,13 @@ class ElectionController extends Controller
         $positions = $positions->map(function ($position) use ($election_id) {
             $candidates = Candidate::where('position_id', $position->position_id)
                 ->where('election_id', $election_id)
-                ->with('user:user_id,name')
+                ->with('user:user_id,name') 
                 ->get()
                 ->map(function ($candidate) {
                     return [
                         'candidate_id' => $candidate->candidate_id,
-                        'name' => $candidate->user->name ?? 'Unknown'
+                        'name' => $candidate->user->name ?? 'Unknown',
+                        'image_path' => $candidate->description,
                     ];
                 });
 
@@ -87,9 +88,9 @@ class ElectionController extends Controller
             return [
                 'position_id' => $position->position_id,
                 'position_name' => $position->position_name,
-                'candidates' => $candidates
+                'candidates' => $candidates,
             ];
-        })->filter()->values(); 
+        })->filter()->values();
 
         return response()->json([
             'election_id' => $election_id,

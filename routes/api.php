@@ -14,6 +14,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\Mobile\AuthController as MobileAuthController;
 use App\Http\Controllers\Mobile\ElectionController as MobileElectionController;
 use App\Http\Controllers\Mobile\VoteController as MobileVoteController;
+use App\Http\Controllers\Mobile\PositionController as MobilePositionController;
 
 //------------------WEB--------------------------
 
@@ -85,6 +86,8 @@ Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
 //------------------MOBILE--------------------------
 Route::prefix('mobile')->group(function () {
     Route::post('/login', [MobileAuthController::class, 'login']);
+
+    Route::get('/positions', [MobilePositionController::class, 'mobilePositions']);
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [MobileAuthController::class, 'logout']);
