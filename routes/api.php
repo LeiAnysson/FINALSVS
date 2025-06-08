@@ -10,6 +10,7 @@ use App\Http\Controllers\CandidateController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\PositionController;
 use App\Http\Controllers\UserController;
+use App\Models\User;
 //MOBILE
 use App\Http\Controllers\Mobile\AuthController as MobileAuthController;
 use App\Http\Controllers\Mobile\ElectionController as MobileElectionController;
@@ -54,6 +55,11 @@ Route::get('admin/positions', [PositionController::class, 'index']);
 
 //dashboard
 Route::middleware('auth:sanctum')->get('/teacher/dashboard', [TeacherDashboardController::class, 'index']);
+Route::get('/stats', function () {
+    return response()->json([
+        'registeredVoters' => User::count()
+    ]);
+});
 
 //voter page
 Route::get('/admin/voters', [VoterController::class, 'index']);
@@ -65,11 +71,12 @@ Route::delete('/admin/voters/{user_id}', [VoterController::class, 'deleteVoter']
 
 //Candidate page
 Route::prefix('admin')->group(function () {
-    Route::get('/candidates', [CandidateController::class, 'index']);
+    //Route::get('/candidates', [CandidateController::class, 'index']);
     Route::post('/candidates', [CandidateController::class, 'store']);
     Route::put('/candidates/{id}', [CandidateController::class, 'update']);
     Route::delete('/candidates/{id}', [CandidateController::class, 'destroy']);
 });
+Route::get('/admin/candidates', [CandidateController::class, 'index']);
 Route::get('/admin/elections/{id}/candidates', [CandidateController::class, 'getCandidatesByElection']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/upload-image', [CandidateController::class, 'uploadImage']);

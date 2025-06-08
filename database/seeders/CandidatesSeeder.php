@@ -15,9 +15,9 @@ class CandidatesSeeder extends Seeder
     {
         DB::table('candidates')->insert([
             [
-                'user_id' => 3, // Student user_id
+                'user_id' => 3, 
                 'election_id' => 1,
-                'position_id' => 1, // President
+                'position_id' => 1, 
                 'description' => 'Passionate student leader',
                 'created_at' => now(),
                 'updated_at' => now(),

@@ -15,7 +15,7 @@ class VotesSeeder extends Seeder
     {
         DB::table('votes')->insert([
             [
-                'voter_id' => 3, // student user_id
+                'voter_id' => 3, 
                 'candidate_id' => 1,
                 'election_id' => 1,
                 'created_at' => now(),

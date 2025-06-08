@@ -65,7 +65,7 @@ class UserController extends Controller
     }
     public function searchByName(Request $request)
     {
-        $name = $request->query('name'); // 🔑 This is important for GET requests
+        $name = $request->query('name'); 
 
         Log::info("Searching user for name: " . $name);
 

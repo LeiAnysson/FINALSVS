@@ -16,16 +16,17 @@ class VoterController extends Controller
         $students = User::where('role_id', 2)->get();
 
         $formatted = $students->map(function ($student) {
-        $nameParts = explode(' ', $student->name);
-        return [
-            'studentID' => $student->student_ID ?? '[student_id missing]',
-            'firstName' => $nameParts[0] ?? '',
-            'middleName' => $nameParts[1] ?? '',
-            'lastName' => isset($nameParts[2]) ? $nameParts[2] : ($nameParts[1] ?? ''),
-            'program' => $student->course ?? 'N/A',
-            'status' => $student->status ?? 'Not Voted',
-        ];
-    });
+            $nameParts = explode(' ', $student->name);
+            return [
+                'id' => $student->user_id,
+                'studentID' => $student->student_ID ?? '[student_id missing]',
+                'firstName' => $nameParts[0] ?? '',
+                'middleName' => $nameParts[1] ?? '',
+                'lastName' => isset($nameParts[2]) ? $nameParts[2] : ($nameParts[1] ?? ''),
+                'program' => $student->course ?? 'N/A',
+                'status' => $student->status ?? 'Not Voted',
+            ];
+        });
 
         return response()->json($formatted);
     }
@@ -56,10 +57,11 @@ class VoterController extends Controller
         ]);
 
         $formatted = [
-            'studentID' => $newVoter->student_ID ?? '[student_id missing]',
-            'firstName' => explode(' ', $newVoter->name)[0] ?? '',
-            'middleName' => explode(' ', $newVoter->name)[1] ?? '',
-            'lastName' => explode(' ', $newVoter->name)[2] ?? '',
+            'id' => $newVoter->user_id,
+            'studentID' => $newVoter->student_ID,
+            'firstName' => $nameParts[0] ?? '',
+            'middleName' => $nameParts[1] ?? '',
+            'lastName' => $nameParts[2] ?? ($nameParts[1] ?? ''),
             'program' => $newVoter->course ?? 'N/A',
             'status' => $newVoter->status ?? 'Not Voted',
         ];
@@ -117,7 +119,7 @@ class VoterController extends Controller
 
     public function deleteVoter($user_id)
     {
-        $user = User::where('role_id', 2)->find($user_id);
+        $user = User::where('role_id', 2)->where('user_id', $user_id)->first();
 
         if (!$user) {
             return response()->json([

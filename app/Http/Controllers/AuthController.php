@@ -9,7 +9,6 @@ use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {   
-    //login for teachers
     public function adminLogin(Request $request)
     {
         $request->validate([
@@ -41,7 +40,6 @@ class AuthController extends Controller
         ]);
     }
 
-    //login for students
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [

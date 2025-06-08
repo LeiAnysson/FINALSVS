@@ -13,22 +13,18 @@ class VoteController extends Controller
 {
     public function submitVote(Request $request)
     {
-        // Validate inputs
         $request->validate([
             'election_id' => 'required|exists:elections,election_id',
             'candidate_id' => 'required|exists:candidates,candidate_id',
         ]);
 
-        // Get authenticated user
         $user = Auth::user();
         if (!$user) {
             return response()->json(['message' => 'User not authenticated'], 401);
         }
 
-        // Find the candidate
         $candidate = Candidate::findOrFail($request->candidate_id);
 
-        // Check if the user already voted for this position in the election
         $existingVote = Vote::where('voter_id', $user->user_id)
             ->where('election_id', $request->election_id)
             ->whereHas('candidate', function ($query) use ($candidate) {
@@ -42,7 +38,6 @@ class VoteController extends Controller
             ], 409);
         }
 
-        // Save the vote
         $vote = Vote::create([
             'voter_id' => $user->user_id,
             'candidate_id' => $request->candidate_id,
@@ -68,7 +63,7 @@ class VoteController extends Controller
             'password' => 'required|string',
         ]);
 
-        $user = Auth::user(); // Assumes user is authenticated already
+        $user = Auth::user(); 
 
         if (!$user) {
             return response()->json(['message' => 'Unauthorized'], 401);

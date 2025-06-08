@@ -17,6 +17,6 @@ class VerifyCsrfToken
      * @var array<int, string>
      */
     protected $except = [
-        'api/*',  // For example, to exclude API routes from CSRF
+        'api/*',  
     ];
 }

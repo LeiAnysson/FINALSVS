@@ -15,8 +15,8 @@ class ElectionsSeeder extends Seeder
     {
         DB::table('elections')->insert([
             [
-                'org_id' => 1, // BSIT
-                'created_by' => 1, // Admin user_id
+                'org_id' => 1, 
+                'created_by' => 1, 
                 'title' => 'BSIT 1st Semester Election',
                 'start_date' => now()->addDays(1),
                 'end_date' => now()->addDays(7),

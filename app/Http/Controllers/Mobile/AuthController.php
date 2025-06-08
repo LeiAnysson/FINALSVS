@@ -12,32 +12,31 @@ class AuthController extends Controller
 {
     public function login(Request $request)
     {
-        // Validate input
         $credentials = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required'],
         ]);
 
-        // Attempt login
         if (!Auth::attempt($credentials)) {
             return response()->json([
                 'message' => 'Invalid email or password'
             ], 401);
         }
 
-        // Login successful
-        $user = $request->user();
+        $user = Auth::user();
 
-        // Optional: delete old tokens
         $user->tokens()->delete();
 
-        // Create new token
         $token = $user->createToken('mobile_token')->plainTextToken;
 
         return response()->json([
             'message' => 'Login successful',
-            'user' => $user,
-            'token' => $token
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+            ],
+            'token' => $token,
         ]);
     }
 
@@ -46,7 +45,6 @@ class AuthController extends Controller
         $user = $request->user();
         Log::info('User trying to logout:', ['user' => $user]);
         $token = $request->user()?->currentAccessToken();
-        
 
         if ($token instanceof PersonalAccessToken) {
             $token->delete();

@@ -10,7 +10,7 @@ class CorsMiddleware
 {
     public function handle($request, Closure $next)
     {
-        $allowedOrigin = 'http://localhost:3000'; // your frontend URL
+        $allowedOrigin = 'http://localhost:3000'; 
 
         if ($request->getMethod() === "OPTIONS") {
             return response('', 204)

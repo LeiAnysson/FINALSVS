@@ -14,11 +14,6 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-        // DB::table("roles")->insert([
-        //     ["role_name" => "admin"],
-        //     ["role_name" => "student"]
-        // ]);
         $this->call([
             RolesSeeder::class,
             OrganizationsSeeder::class,
